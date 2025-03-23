@@ -1,0 +1,196 @@
+<!-- templates/chat.html -->
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4>AI Educational Assistant</h4>
+                </div>
+                <div class="card-body chat-container" id="chatContainer" style="height: 400px; overflow-y: auto;">
+                    <div class="system-message">
+                        <p>Hello! I'm your AI educational assistant. How can I help you today?</p>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <div class="input-group">
+                        <input type="text" id="userMessage" class="form-control" placeholder="Type your message here...">
+                        <div class="input-group-append">
+                            <button class="btn btn-primary" id="sendBtn">Send</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card mt-4">
+                <div class="card-header bg-success text-white">
+                    <h4>Content Generation</h4>
+                </div>
+                <div class="card-body">
+                    <form id="contentGenerationForm">
+                        <div class="form-group">
+                            <label for="contentPrompt">What would you like me to generate?</label>
+                            <textarea class="form-control" id="contentPrompt" rows="3" placeholder="Enter a topic or prompt..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="contentType">Content Type</label>
+                            <select class="form-control" id="contentType">
+                                <option value="text">General Text</option>
+                                <option value="quiz">Quiz Questions</option>
+                                <option value="explanation">Detailed Explanation</option>
+                                <option value="summary">Topic Summary</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-success">Generate Content</button>
+                    </form>
+                    
+                    <div class="mt-4" id="generatedContent" style="display: none;">
+                        <h5>Generated Content:</h5>
+                        <div class="border p-3 bg-light" id="contentOutput">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Store conversation context
+let conversationContext = [];
+
+// Function to add message to chat container
+function addMessage(message, sender) {
+    const chatContainer = document.getElementById('chatContainer');
+    const messageDiv = document.createElement('div');
+    messageDiv.className = sender === 'user' ? 'user-message text-right my-2' : 'assistant-message my-2';
+    
+    const messageContent = document.createElement('p');
+    messageContent.className = sender === 'user' ? 'bg-secondary text-white p-2 rounded d-inline-block' : 'bg-light p-2 rounded d-inline-block';
+    messageContent.innerText = message;
+    
+    messageDiv.appendChild(messageContent);
+    chatContainer.appendChild(messageDiv);
+    
+    // Scroll to bottom
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+    
+    // Add to conversation context
+    conversationContext.push({
+        role: sender === 'user' ? 'user' : 'assistant',
+        content: message
+    });
+}
+
+// Handle sending chat messages
+document.getElementById('sendBtn').addEventListener('click', async () => {
+    const userMessage = document.getElementById('userMessage');
+    const message = userMessage.value.trim();
+    
+    if (message) {
+        // Add user message to chat
+        addMessage(message, 'user');
+        
+        // Clear input
+        userMessage.value = '';
+        
+        try {
+            // Show loading indicator
+            const loadingDiv = document.createElement('div');
+            loadingDiv.className = 'assistant-message my-2';
+            loadingDiv.innerHTML = '<p class="bg-light p-2 rounded d-inline-block">Thinking...</p>';
+            document.getElementById('chatContainer').appendChild(loadingDiv);
+            
+            // Send message to server
+            const response = await fetch('/api/ai/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    prompt: message,
+                    context: conversationContext
+                })
+            });
+            
+            // Remove loading indicator
+            document.getElementById('chatContainer').removeChild(loadingDiv);
+            
+            if (response.ok) {
+                const data = await response.json();
+                // Add assistant response to chat
+                addMessage(data.response, 'assistant');
+            } else {
+                // Handle error
+                const error = await response.json();
+                addMessage('Sorry, there was an error: ' + error.error, 'assistant');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            addMessage('Sorry, there was an error connecting to the AI service.', 'assistant');
+        }
+    }
+});
+
+// Handle pressing Enter in input field
+document.getElementById('userMessage').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+        document.getElementById('sendBtn').click();
+    }
+});
+
+// Handle content generation
+document.getElementById('contentGenerationForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const promptElement = document.getElementById('contentPrompt');
+    const prompt = promptElement.value.trim();
+    const contentType = document.getElementById('contentType').value;
+    
+    if (prompt) {
+        try {
+            // Change button to loading state
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            const originalBtnText = submitBtn.innerHTML;
+            submitBtn.innerHTML = 'Generating...';
+            submitBtn.disabled = true;
+            
+            // Send request to server
+            const response = await fetch('/api/ai/generate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    prompt: prompt,
+                    content_type: contentType
+                })
+            });
+            
+            // Reset button
+            submitBtn.innerHTML = originalBtnText;
+            submitBtn.disabled = false;
+            
+            if (response.ok) {
+                const data = await response.json();
+                
+                // Display the generated content
+                document.getElementById('contentOutput').innerHTML = data.content.replace(/\n/g, '<br>');
+                document.getElementById('generatedContent').style.display = 'block';
+            } else {
+                // Handle error
+                const error = await response.json();
+                alert('Error: ' + error.error);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error connecting to the AI service. Please try again later.');
+        }
+    }
+});
+</script>
+{% endblock %}

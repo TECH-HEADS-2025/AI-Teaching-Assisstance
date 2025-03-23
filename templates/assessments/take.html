@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+
+{% block title %}Take Assessment{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h2>{{ assessment.title }}</h2>
+            <div>
+                <span class="badge bg-primary">{{ assessment.points }} Points</span>
+                <span class="badge bg-info">Due: {{ assessment.due_date|date:"F d, Y, g:i a" }}</span>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="mb-4">
+                <h5>Instructions:</h5>
+                <div class="instructions-content">
+                    {{ assessment.instructions|safe }}
+                </div>
+            </div>
+
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                
+                {% for question in questions %}
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <div class="d-flex justify-content-between">
+                            <h5>Question {{ forloop.counter }}: {{ question.title }}</h5>
+                            <span class="badge bg-secondary">{{ question.points }} pts</span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <p>{{ question.content|safe }}</p>
+                        
+                        {% if question.question_type == 'multiple_choice' %}
+                            <div class="mb-3">
+                                {% for choice in question.choices %}
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="question_{{ question.id }}" 
+                                           id="choice_{{ choice.id }}" value="{{ choice.id }}" required>
+                                    <label class="form-check-label" for="choice_{{ choice.id }}">
+                                        {{ choice.content }}
+                                    </label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        
+                        {% elif question.question_type == 'text' %}
+                            <div class="mb-3">
+                                <textarea class="form-control" name="question_{{ question.id }}" rows="4" required></textarea>
+                            </div>
+                        
+                        {% elif question.question_type == 'file_upload' %}
+                            <div class="mb-3">
+                                <input type="file" class="form-control" name="question_{{ question.id }}" required>
+                            </div>
+                        
+                        {% elif question.question_type == 'code' %}
+                            <div class="mb-3">
+                                <textarea class="form-control code-editor" name="question_{{ question.id }}" 
+                                          rows="8" data-language="{{ question.language }}" required></textarea>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+                
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                    <button type="submit" class="btn btn-primary">Submit Assessment</button>
+                    <button type="button" class="btn btn-outline-secondary" id="save-draft">Save Draft</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    // Initialize code editors if any
+    document.addEventListener('DOMContentLoaded', function() {
+        const codeEditors = document.querySelectorAll('.code-editor');
+        codeEditors.forEach(editor => {
+            // Initialize with CodeMirror or any other code editor library
+            // Example: const cm = CodeMirror.fromTextArea(editor, {...});
+        });
+        
+        // Save draft functionality
+        document.getElementById('save-draft').addEventListener('click', function() {
+            // AJAX call to save draft
+            const formData = new FormData(document.querySelector('form'));
+            formData.append('is_draft', 'true');
+            
+            fetch('{% url "save_assessment_draft" assessment.id %}', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Draft saved successfully');
+                } else {
+                    alert('Error saving draft');
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}
+{% endblock %}

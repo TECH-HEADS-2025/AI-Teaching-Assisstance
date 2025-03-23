@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Performance Tracking Dashboard</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .dashboard-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .dashboard-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+        }
+        
+        .stat-label {
+            color: #6c757d;
+        }
+        
+        .progress {
+            height: 10px;
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <div class="container py-4">
+        <header class="pb-3 mb-4 border-bottom">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1 class="fw-bold">Performance Dashboard</h1>
+                <div class="dropdown">
+                    <button class="btn btn-outline-primary dropdown-toggle" type="button" id="timeframeDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        Last 30 Days
+                    </button>
+                    <ul class="dropdown-menu" aria-labelledby="timeframeDropdown">
+                        <li><a class="dropdown-item active" href="#" data-timeframe="30">Last 30 Days</a></li>
+                        <li><a class="dropdown-item" href="#" data-timeframe="90">Last 90 Days</a></li>
+                        <li><a class="dropdown-item" href="#" data-timeframe="180">Last 180 Days</a></li>
+                        <li><a class="dropdown-item" href="#" data-timeframe="365">Last Year</a></li>
+                    </ul>
+                </div>
+            </div>
+        </header>
+
+        <!-- KPI Cards -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card dashboard-card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title stat-label">Total Sales</h5>
+                        <p class="stat-value" id="totalSales">$124,568</p>
+                        <div class="d-flex align-items-center">
+                            <span class="text-success me-2"><i class="bi bi-arrow-up"></i> 8.2%</span>
+                            <div class="progress flex-grow-1">
+                                <div class="progress-bar bg-success" role="progressbar" style="width: 82%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card dashboard-card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title stat-label">Conversion Rate</h5>
+                        <p class="stat-value" id="conversionRate">5.2%</p>
+                        <div class="d-flex align-items-center">
+                            <span class="text-danger me-2"><i class="bi bi-arrow-down"></i> 1.5%</span>
+                            <div class="progress flex-grow-1">
+                                <div class="progress-bar bg-danger" role="progressbar" style="width: 52%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card dashboard-card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title stat-label">New Users</h5>
+                        <p class="stat-value" id="newUsers">1,245</p>
+                        <div class="d-flex align-items-center">
+                            <span class="text-success me-2"><i class="bi bi-arrow-up"></i> 12.7%</span>
+                            <div class="progress flex-grow-1">
+                                <div class="progress-bar bg-success" role="progressbar" style="width: 78%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card dashboard-card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title stat-label">Avg. Session</h5>
+                        <p class="stat-value" id="avgSession">3:24</p>
+                        <div class="d-flex align-items-center">
+                            <span class="text-success me-2"><i class="bi bi-arrow-up"></i> 0.8%</span>
+                            <div class="progress flex-grow-1">
+                                <div class="progress-bar bg-success" role="progressbar" style="width: 65%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts -->
+        <div class="row mb-4">
+            <div class="col-md-8">
+                <div class="card dashboard-card h-100">
+                    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Revenue Trends</h5>
+                        <div class="btn-group btn-group-sm" role="group">
+                            <button type="button" class="btn btn-outline-secondary active" data-view="daily">Daily</button>
+                            <button type="button" class="btn btn-outline-secondary" data-view="weekly">Weekly</button>
+                            <button type="button" class="btn btn-outline-secondary" data-view="monthly">Monthly</button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="revenueChart" height="300"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card dashboard-card h-100">
+                    <div class="card-header bg-white">
+                        <h5 class="mb-0">Traffic Sources</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="trafficSourcesChart" height="300"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card dashboard-card h-100">
+                    <div class="card-header bg-white">
+                        <h5 class="mb-0">User Activity</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="userActivityChart" height="300"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card dashboard-card h-100">
+                    <div class="card-header bg-white">
+                        <h5 class="mb-0">Completion Rates</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="completionRatesChart" height="300"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Data Table -->
+        <div class="card dashboard-card mb-4">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Recent Performance</h5>
+                <div class="input-group w-25">
+                    <input type="text" id="tableSearch" class="form-control" placeholder="Search...">
+                    <button class="btn btn-outline-secondary" type="button"><i class="bi bi-search"></i></button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover" id="performanceTable">
+                        <thead>
+                            <tr>
+                                <th class="sortable" data-sort="date">Date <i class="bi bi-arrow-down-up"></i></th>
+                                <th class="sortable" data-sort="page">Page <i class="bi bi-arrow-down-up"></i></th>
+                                <th class="sortable text-end" data-sort="visitors">Visitors <i class="bi bi-arrow-down-up"></i></th>
+                                <th class="sortable text-end" data-sort="pageviews">Pageviews <i class="bi bi-arrow-down-up"></i></th>
+                                <th class="sortable text-end" data-sort="bounce">Bounce Rate <i class="bi bi-arrow-down-up"></i></th>
+                                <th class="sortable text-end" data-sort="conversion">Conversion <i class="bi bi-arrow-down-up"></i></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Table rows will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+                <nav aria-label="Performance data navigation">
+                    <ul class="pagination justify-content-center">
+                        <li class="page-item disabled">
+                            <a class="page-link" href="#" tabindex="-1" aria-disabled="true">Previous</a>
+                        </li>
+                        <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                        <li class="page-item"><a class="page-link" href="#">2</a></li>
+                        <li class="page-item"><a class="page-link" href="#">3</a></li>
+                        <li class="page-item">
+                            <a class="page-link" href="#">Next</a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS and dependencies -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Font Awesome icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    
+    <!-- Main JavaScript -->
+    <script>
+        // Sample data - in a real application, this would come from an API
+        const performanceData = {
+            daily: {
+                labels: ['Mar 1', 'Mar 2', 'Mar 3', 'Mar 4', 'Mar 5', 'Mar 6', 'Mar 7', 'Mar 8', 'Mar 9', 'Mar 10',
+                         'Mar 11', 'Mar 12', 'Mar 13', 'Mar 14', 'Mar 15', 'Mar 16', 'Mar 17', 'Mar 18', 'Mar 19', 'Mar 20',
+                         'Mar 21', 'Mar 22', 'Mar 23', 'Mar 24', 'Mar 25', 'Mar 26', 'Mar 27', 'Mar 28', 'Mar 29', 'Mar 30'],
+                revenue: [2125, 1820, 2010, 2450, 2350, 1950, 1850, 2300, 2450, 2600, 2750, 2500, 2450, 2390, 2600, 
+                         2750, 2820, 2950, 3100, 3050, 2900, 3150, 3250, 3400, 3200, 3300, 3450, 3600, 3500, 3750],
+                users: [320, 280, 310, 340, 330, 290, 280, 320, 350, 360, 380, 360, 350, 340, 370, 390, 400, 410, 
+                       430, 420, 400, 440, 450, 470, 460, 480, 490, 510, 500, 520]
+            },
+            weekly: {
+                labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+                revenue: [14555, 17050, 19570, 23800],
+                users: [2150, 2420, 2830, 3350]
+            },
+            monthly: {
+                labels: ['Jan', 'Feb', 'Mar'],
+                revenue: [95000, 108000, 124568],
+                users: [11500, 13200, 15245]
+            },
+            trafficSources: {
+                labels: ['Organic Search', 'Direct', 'Social', 'Referral', 'Email'],
+                data: [38, 24, 18, 12, 8]
+            },
+            userActivity: {
+                labels: ['Login', 'Browse', 'Search', 'View Product', 'Add to Cart', 'Checkout', 'Purchase'],
+                data: [100, 92, 85, 72, 45, 32, 28]
+            },
+            completionRates: {
+                labels: ['Task 1', 'Task 2', 'Task 3', 'Task 4', 'Task 5'],
+                data: [92, 78, 65, 83, 70]
+            },
+            tableData: [
+                { date: '2023-03-30', page: 'Home Page', visitors: 1245, pageviews: 1820, bounce: '32%', conversion: '4.8%' },
+                { date: '2023-03-29', page: 'Products', visitors: 875, pageviews: 1423, bounce: '28%', conversion: '5.6%' },
+                { date: '2023-03-28', page: 'Shopping Cart', visitors: 542, pageviews: 895, bounce: '21%', conversion: '12.3%' },
+                { date: '2023-03-27', page: 'Blog', visitors: 698, pageviews: 1056, bounce: '45%', conversion: '2.1%' },
+                { date: '2023-03-26', page: 'About Us', visitors: 324, pageviews: 452, bounce: '52%', conversion: '0.8%' },
+                { date: '2023-03-25', page: 'Contact', visitors: 286, pageviews: 386, bounce: '38%', conversion: '3.2%' },
+                { date: '2023-03-24', page: 'Product Category A', visitors: 547, pageviews: 968, bounce: '24%', conversion: '7.8%' },
+                { date: '2023-03-23', page: 'Product Category B', visitors: 432, pageviews: 823, bounce: '26%', conversion: '6.5%' },
+                { date: '2023-03-22', page: 'Special Offers', visitors: 764, pageviews: 1256, bounce: '18%', conversion: '8.3%' },
+                { date: '2023-03-21', page: 'FAQ', visitors: 289, pageviews: 387, bounce: '47%', conversion: '1.2%' }
+            ]
+        };
+
+        // Initialize charts when DOM is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize Revenue Chart
+            const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+            const revenueChart = new Chart(revenueCtx, {
+                type: 'line',
+                data: {
+                    labels: performanceData.daily.labels,
+                    datasets: [
+                        {
+                            label: 'Revenue ($)',
+                            data: performanceData.daily.revenue,
+                            borderColor: 'rgba(66, 133, 244, 1)',
+                            backgroundColor: 'rgba(66, 133, 244, 0.1)',
+                            tension: 0.4,
+                            fill: true,
+                            pointBackgroundColor: 'rgba(66, 133, 244, 1)',
+                            pointRadius: 0,
+                            pointHoverRadius: 4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.y !== null) {
+                                        label += new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(context.parsed.y);
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        },
+                        y: {
+                            grid: {
+                                borderDash: [2, 4],
+                                drawBorder: false
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + value.toLocaleString();
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Initialize Traffic Sources Chart (Doughnut chart)
+            const trafficSourcesCtx = document.getElementById('trafficSourcesChart').getContext('2d');
+            const trafficSourcesChart = new Chart(trafficSourcesCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: performanceData.trafficSources.labels,
+                    datasets: [{
+                        data: performanceData.trafficSources.data,
+                        backgroundColor: [
+                            'rgba(66, 133, 244, 0.8)',
+                            'rgba(52, 168, 83, 0.8)',
+                            'rgba(251, 188, 5, 0.8)',
+                            'rgba(234, 67, 53, 0.8)',
+                            'rgba(128, 100, 162, 0.8)'
+                        ],
+                        borderWidth: 2,
+                        borderColor: '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 15,
+                                usePointStyle: true,
+                                pointStyle: 'circle'
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.raw || 0;
+                                    return `${label}: ${value}%`;
+                                }
+                            }
+                        }
+                    },
+                    cutout: '70%'
+                }
+            });
+
+            // Initialize User Activity Chart (Line chart)
+            const userActivityCtx = document.getElementById('userActivityChart').getContext('2d');
+            const userActivityChart = new Chart(userActivityCtx, {
+                type: 'line',
+                data: {
+                    labels: performanceData.userActivity.labels,
+                    datasets: [{
+                        label: 'Completion Rate',
+                        data: performanceData.userActivity.data,
+                        borderColor: 'rgba(52, 168, 83, 1)',
+                        backgroundColor: 'rgba(52, 168, 83, 0.1)',
+                        tension: 0.3,
+                        fill: true,
+                        pointBackgroundColor: 'rgba(52, 168, 83, 1)',
+                        pointRadius: 4,
+                        pointHoverRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.dataset.label}: ${context.raw}%`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        },
+                        y: {
+                            min: 0,
+                            max: 100,
+                            ticks: {
+                                callback: function(value) {
+                                    return value + '%';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Initialize Completion Rates Chart (Bar chart)
+            const completionRatesCtx = document.getElementById('completionRatesChart').getContext('2d');
+            const completionRatesChart = new Chart(completionRatesCtx, {
+                type: 'bar',
+                data: {
+                    labels: performanceData.completionRates.labels,
+                    datasets: [{
+                        label: 'Completion Rate',
+                        data: performanceData.completionRates.data,
+                        backgroundColor: 'rgba(251, 188, 5, 0.8)',
+                        borderColor: 'rgba(251, 188, 5, 1)',
+                        borderWidth: 1,
+                        borderRadius: 4,
+                        barPercentage: 0.6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.dataset.label}: ${context.raw}%`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        },
+                        y: {
+                            min: 0,
+                            max: 100,
+                            ticks: {
+                                callback: function(value) {
+                                    return value + '%';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Populate the table with data
+            const tableBody = document.querySelector('#performanceTable tbody');
+            populateTable(performanceData.tableData);
+
+            function populateTable(data) {
+                tableBody.innerHTML = '';
+                data.forEach(row => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${formatDate(row.date)}</td>
+                        <td>${row.page}</td>
+                        <td class="text-end">${row.visitors.toLocaleString()}</td>
+                        <td class="text-end">${row.pageviews.toLocaleString()}</td>
+                        <td class="text-end">${row.bounce}</td>
+                        <td class="text-end">${row.conversion}</td>
+                    `;
+                    tableBody.appendChild(tr);
+                });
+            }
+
+            // Format date for table display
+            function formatDate(dateStr) {
+                const date = new Date(dateStr);
+                return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+            }
+
+            // Handle time period filter for Revenue chart
+            const timePeriodButtons = document.querySelectorAll('[data-view]');
+            timePeriodButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    // Remove active class from all buttons
+                    timePeriodButtons.forEach(btn => btn.classList.remove('active'));
+                    // Add active class to clicked button
+                    this.classList.add('active');
+                    
+                    const view = this.getAttribute('data-view');
+                    updateRevenueChart(view);
+                });
+            });
+
+            function updateRevenueChart(view) {
+                revenueChart.data.labels = performanceData[view].labels;
+                revenueChart.data.datasets[0].data = performanceData[view].revenue;
+                revenueChart.update();
+            }
+
+            // Handle table search
+            const tableSearch = document.getElementById('tableSearch');
+            tableSearch.addEventListener('keyup', function() {
+                const searchTerm = this.value.toLowerCase();
+                const filteredData = performanceData.tableData.filter(row => {
+                    return row.page.toLowerCase().includes(searchTerm) || 
+                           row.date.includes(searchTerm);
+                });
+                populateTable(filteredData);
+            });
+
+            // Handle table sorting
+            const sortableHeaders = document.querySelectorAll('.sortable');
+            sortableHeaders.forEach(header => {
+                header.addEventListener('click', function() {
+                    const sortKey = this.getAttribute('data-sort');
+                    const sortDirection = this.classList.contains('sort-asc') ? 'desc' : 'asc';
+                    
+                    // Remove sorting classes from all headers
+                    sortableHeaders.forEach(h => {
+                        h.classList.remove('sort-asc', 'sort-desc');
+                    });
+                    
+                    // Add appropriate sorting class to clicked header
+                    this.classList.add(`sort-${sortDirection}`);
+                    
+                    // Sort the data
+                    const sortedData = [...performanceData.tableData].sort((a, b) => {
+                        let aValue = a[sortKey];
+                        let bValue = b[sortKey];
+                        
+                        // Handle percentage values
+                        if (typeof aValue === 'string' && aValue.includes('%')) {
+                            aValue = parseFloat(aValue);
+                            bValue = parseFloat(bValue);
+                        }
+                        
+                        if (sortDirection === 'asc') {
+                            return aValue > bValue ? 1 : -1;
+                        } else {
+                            return aValue < bValue ? 1 : -1;
+                        }
+                    });
+                    
+                    populateTable(sortedData);
+                });
+            });
+
+            // Handle timeframe dropdown
+            const timeframeLinks = document.querySelectorAll('[data-timeframe]');
+            const timeframeDropdown = document.getElementById('timeframeDropdown');
+            
+            timeframeLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    // Remove active class from all links
+                    timeframeLinks.forEach(l => l.classList.remove('active'));
+                    // Add active class to clicked link
+                    this.classList.add('active');
+                    
+                    const timeframe = this.getAttribute('data-timeframe');
+                    timeframeDropdown.textContent = this.textContent;
+                    
+                    // In a real application, you would fetch new data based on the selected timeframe
+                    // For demo purposes, we're just showing an alert
+                    updateDashboardData(timeframe);
+                });
+            });
+
+            // Demo function to simulate updating dashboard data
+            function updateDashboardData(timeframe) {
+                // In a real application, this would make an API call to get new data
+                
+                // For demo, just show random variations
+                const variation = (Math.random() * 20) - 10; // Random between -10 and +10
+                
+                // Update KPI cards with random variations
+                const totalSales = document.getElementById('totalSales');
+                const baseValue = 124568;
+                const newValue = Math.round(baseValue * (1 + (variation / 100)));
+                totalSales.textContent = '$' + newValue.toLocaleString();
+                
+                // Other updates would go here
+                console.log(`Dashboard updated for timeframe: ${timeframe} days`);
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,128 @@
+{% extends 'base.html' %}
+
+{% block title %}Create New Assessment{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'assessments:index' %}">Assessments</a></li>
+            <li class="breadcrumb-item active">Create New</li>
+        </ol>
+    </nav>
+
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h3 class="card-title mb-0">Create New Assessment</h3>
+        </div>
+        <div class="card-body">
+            <form method="post" id="assessment-form">
+                {% csrf_token %}
+                
+                {% if form.non_field_errors %}
+                <div class="alert alert-danger">
+                    {{ form.non_field_errors }}
+                </div>
+                {% endif %}
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.title.id_for_label }}" class="form-label">Title *</label>
+                        {{ form.title|add_class:"form-control" }}
+                        {% if form.title.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.title.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.subject.id_for_label }}" class="form-label">Subject *</label>
+                        {{ form.subject|add_class:"form-control" }}
+                        {% if form.subject.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.subject.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.due_date.id_for_label }}" class="form-label">Due Date *</label>
+                        {{ form.due_date|add_class:"form-control" }}
+                        {% if form.due_date.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.due_date.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.time_limit.id_for_label }}" class="form-label">Time Limit (minutes)</label>
+                        {{ form.time_limit|add_class:"form-control" }}
+                        <small class="text-muted">Leave blank for no time limit</small>
+                        {% if form.time_limit.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.time_limit.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="{{ form.instructions.id_for_label }}" class="form-label">Instructions</label>
+                    {{ form.instructions|add_class:"form-control" }}
+                    {% if form.instructions.errors %}
+                    <div class="invalid-feedback d-block">
+                        {{ form.instructions.errors }}
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="mb-3">
+                    <div class="form-check">
+                        {{ form.allow_multiple_attempts|add_class:"form-check-input" }}
+                        <label class="form-check-label" for="{{ form.allow_multiple_attempts.id_for_label }}">
+                            Allow Multiple Attempts
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="d-flex justify-content-between">
+                    <a href="{% url 'assessments:index' %}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to List
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Save and Continue to Add Questions
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Initialize datepicker for due date
+        $('#{{ form.due_date.id_for_label }}').datepicker({
+            format: 'yyyy-mm-dd',
+            startDate: '+1d',
+            autoclose: true
+        });
+        
+        // Initialize rich text editor for instructions
+        $('#{{ form.instructions.id_for_label }}').summernote({
+            height: 150,
+            toolbar: [
+                ['style', ['bold', 'italic', 'underline', 'clear']],
+                ['font', ['strikethrough']],
+                ['para', ['ul', 'ol']],
+                ['insert', ['link']]
+            ]
+        });
+    });
+</script>
+{% endblock %}

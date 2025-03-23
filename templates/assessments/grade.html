@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+
+{% block title %}Grade Submission{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h2>Grade Submission</h2>
+            <div>
+                <a href="{% url 'assessment_submissions' assessment.id %}" class="btn btn-outline-primary">Back to Submissions</a>
+            </div>
+        </div>
+        
+        <div class="card-body">
+            <!-- Submission Info -->
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <h4>{{ assessment.title }}</h4>
+                    <p><strong>Student:</strong> {{ submission.student.get_full_name }}</p>
+                    <p><strong>Submitted:</strong> {{ submission.submitted_at|date:"F d, Y, g:i a" }}
+                    {% if submission.is_late %}<span class="badge bg-warning text-dark ms-2">Late</span>{% endif %}</p>
+                </div>
+                <div class="col-md-6 text-end">
+                    <div class="mb-2">
+                        <span class="badge bg-primary">Total Points: {{ assessment.points }}</span>
+                        {% if submission.is_graded %}
+                        <span class="badge bg-success">Score: {{ submission.score }} ({{ submission.percentage|floatformat }}%)</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <form method="post" id="grading-form">
+                {% csrf_token %}
+                
+                {% for answer in submission.answers.all %}
+                <div class="card mb-4">
+                    <div class="card-header d-flex justify-content-between">
+                        <h5>Question {{ forloop.counter }}: {{ answer.question.title }}</h5>
+                        <span class="badge bg-secondary">{{ answer.question.points }} pts</span>
+                    </div>
+                    
+                    <div class="card-body">
+                        <!-- Question content -->
+                        <div class="mb-3">
+                            <h6>Question:</h6>
+                            <div class="p-3 bg-light rounded">
+                                {{ answer.question.content|safe }}
+                            </div>
+                        </div>
+                        
+                        <!-- Student's answer -->
+                        <div class="mb-3">
+                            <h6>Student's Answer:</h6>
+                            <div class="p-3 bg-light rounded">
+                                {% if answer.question.question_type == 'multiple_choice' %}
+                                    <p>Selected option: {{ answer.selected_choice.content }}</p>
+                                    
+                                {% elif answer.question.question_type == 'text' %}
+                                    <p>{{ answer.text_answer|linebreaks }}</p>
+                                    
+                                {% elif answer.question.question_type == 'file_upload' %}
+                                    <p>
+                                        <a href="{{ answer.file_answer.url }}" target="_blank" class="btn btn-sm btn-primary">
+                                            <i class="fas fa-download"></i> View/Download File
+                                        </a>
+                                    </p>
+                                    
+                                {% elif answer.question.question_type == 'code' %}
+                                    <div class="code-display" data-language="{{ answer.question.language }}">
+                                        {{ answer.code_answer }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Grading section -->
+                        <div class="row mt-4">
+                            <div class="col-md-8">
+                                <div class="form-group">
+                                    <label for="feedback_{{ answer.id }}"><strong>Feedback:</strong></label>
+                                    <textarea class="form-control" id="feedback_{{ answer.id }}" 
+                                              name="feedback_{{ answer.id }}" rows="3">{{ answer.feedback }}</textarea>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="points_{{ answer.id }}"><strong>Points:</strong></label>
+                                    <input type="number" class="form-control score-input" id="points_{{ answer.id }}" 
+                                           name="points_{{ answer.id }}" min="0" max="{{ answer.question.points }}" 
+                                           value="{{ answer.points_earned|default:0 }}" step="0.5">
+                                    <small class="form-text text-muted">Out of {{ answer.question.points }}</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+                
+                <!-- Overall feedback -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5>Overall Feedback</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <textarea class="form-control" id="overall_feedback" name="overall_feedback" 
+                                      rows="4">{{ submission.feedback }}</textarea>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Submit buttons -->
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>Total Score: <span id="total-score">0</span> / {{ assessment.points }}</h4>
+                    </div>
+                    <div>
+                        <button type="submit" name="save_draft" class="btn btn-outline-secondary me-2">Save Draft</button>
+                        <button type="submit" name="publish" class="btn btn-success">Publish Grades</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize code displays
+        const codeBlocks = document.querySelectorAll('.code-display');
+        codeBlocks.forEach(block => {
+            // Initialize with highlight.js or another code highlighting library
+            // Example: hljs.highlightBlock(block);
+        });
+        
+        // Calculate total score
+        const calculateTotal = function() {
+            const scoreInputs = document.querySelectorAll('.score-input');
+            let total = 0;
+            
+            scoreInputs.forEach(input => {
+                total += parseFloat(input.value) || 0;
+            });
+            
+            document.getElementById('total-score').textContent = total.toFixed(1);
+        };
+        
+        // Add event listeners to score inputs
+        const scoreInputs = document.querySelectorAll('.score-input');
+        scoreInputs.forEach(input => {
+            input.addEventListener('change', calculateTotal);
+            input.addEventListener('input', calculateTotal);
+        });
+        
+        // Calculate initial total
+        calculateTotal();
+    });
+</script>
+{% endblock %}
+{% endblock %}
